@@ -109,26 +109,43 @@ function App() {
                   </AnimatePresence>
                 </div>
               ))}
+              
+              {/* Victory/Draw Overlay */}
+              <AnimatePresence>
+                {(gameState?.winner || gameState?.draw) && (
+                  <motion.div 
+                    initial={{ opacity: 0, scale: 0.8 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    className="overlay"
+                  >
+                    {gameState.winner ? (
+                      <div className="result-content">
+                        <Trophy color="#ffd700" size={64} />
+                        <h2 className="win-title">
+                          {gameState.winner === session.user_id ? "VICTORY!" : "DEFEAT"}
+                        </h2>
+                        <p className="win-subtitle">
+                          {gameState.winner === session.user_id ? "You dominated the board!" : "Better luck next time!"}
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="result-content">
+                        <RefreshCcw color="#fff" size={64} />
+                        <h2 className="win-title">DRAW!</h2>
+                        <p className="win-subtitle">A perfect match.</p>
+                      </div>
+                    )}
+                    <button className="button play-again" onClick={() => window.location.reload()}>
+                      Play Again
+                    </button>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
 
             <div className="game-status">
-              {gameState?.winner ? (
-                <motion.div 
-                  initial={{ scale: 0 }} 
-                  animate={{ scale: 1 }} 
-                  className="result"
-                >
-                  <Trophy color="gold" size={48} />
-                  <h2>{gameState.winner === session.user_id ? "You Won!" : "Opponent Won"}</h2>
-                  <button className="button" style={{ marginTop: '20px' }} onClick={() => window.location.reload()}>Play Again</button>
-                </motion.div>
-              ) : gameState?.draw ? (
-                <div className="result">
-                  <h2>It's a Draw!</h2>
-                  <button className="button" style={{ marginTop: '20px' }} onClick={() => window.location.reload()}>Play Again</button>
-                </div>
-              ) : (
-                <p className="turn-indicator">
+              {!gameState?.winner && !gameState?.draw && (
+                <p className={`turn-indicator ${isMyTurn ? 'my-turn' : ''}`}>
                   {isMyTurn ? "Your Turn" : "Opponent's Turn"}
                 </p>
               )}
