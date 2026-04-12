@@ -10,6 +10,9 @@ socket:
   port: 7350
   max_message_size_bytes: 4096
 
+session:
+  allowed_origin: ["*"]
+
 console:
   port: 7351
   username: "admin"
