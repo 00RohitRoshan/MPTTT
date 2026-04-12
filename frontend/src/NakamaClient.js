@@ -3,7 +3,7 @@ import { v4 as uuidv4 } from "uuid";
 
 class NakamaClient {
   constructor() {
-    this.client = new Client("defaultkey", "127.0.0.1", "7350");
+    this.client = new Client("defaultkey", "localhost", "7350");
     this.client.useSecure = false;
     this.session = null;
     this.socket = null;
@@ -30,11 +30,9 @@ class NakamaClient {
   }
 
   async findMatch(onMatchState) {
+    this.onMatchState = onMatchState;
     console.log("Starting matchmaking...");
-    const query = "*";
-    const minPlayers = 2;
-    const maxPlayers = 2;
-
+    
     return new Promise(async (resolve) => {
       this.socket.onmatchmakermatched = async (matched) => {
         console.log("[Nakama] Matchmaker matched! Joining match...", matched.match_id || matched.token);
@@ -51,9 +49,40 @@ class NakamaClient {
         resolve(match);
       };
 
+      const query = "*";
+      const minPlayers = 2;
+      const maxPlayers = 2;
       const matchmakerTicket = await this.socket.addMatchmaker(query, minPlayers, maxPlayers);
       console.log("Added to matchmaker, ticket:", matchmakerTicket.ticket);
     });
+  }
+
+  async createMatch(onMatchState) {
+    this.onMatchState = onMatchState;
+    const response = await this.client.rpc(this.session, "create_match", {});
+    this.matchId = response.payload.matchId;
+    console.log("[Nakama] RPC created match:", this.matchId);
+    
+    this.socket.onmatchdata = (result) => {
+      const data = JSON.parse(new TextDecoder().decode(result.data));
+      onMatchState(data);
+    };
+
+    const match = await this.socket.joinMatch(this.matchId);
+    return match;
+  }
+
+  async joinMatchById(matchId, onMatchState) {
+    this.onMatchState = onMatchState;
+    this.matchId = matchId;
+    
+    this.socket.onmatchdata = (result) => {
+      const data = JSON.parse(new TextDecoder().decode(result.data));
+      onMatchState(data);
+    };
+
+    const match = await this.socket.joinMatch(this.matchId);
+    return match;
   }
 
   async makeMove(index) {
