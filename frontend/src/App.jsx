@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { nakamaManager } from './NakamaClient'
-import { Trophy, RefreshCcw, User } from 'lucide-react'
+import { Trophy, RefreshCcw, User, Skull } from 'lucide-react'
 import './App.css'
 
 function App() {
@@ -203,10 +203,14 @@ function App() {
                       >
                         {gameState.winner ? (
                           <div className="result-content">
-                            <Trophy color="#ffd700" size={64} />
-                            <h2 className="win-title">
-                              {gameState.winner === session.user_id ? "VICTORY!" : "DEFEAT"}
-                            </h2>
+                            {gameState.winner === session.user_id ? (
+                              <Trophy color="#ffd700" size={64} />
+                            ) : (
+                              <Skull color="#ff4d4d" size={64} />
+                            )}
+                        <h2 className={gameState.winner === session.user_id ? "title-victory" : "title-defeat"}>
+                          {gameState.winner === session.user_id ? "VICTORY!" : "DEFEAT"}
+                        </h2>
                             <p className="win-subtitle">
                               {gameState.winner === session.user_id ? "You dominated the board!" : "Better luck next time!"}
                             </p>
