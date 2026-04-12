@@ -34,7 +34,7 @@ function App() {
   }
 
   const handleCellClick = (index) => {
-    console.log("Cell clicked:", index, "Turn ID:", gameState?.turn, "My ID:", session?.user_id);
+    console.log("Cell clicked:", index, "Turn ID:", gameState?.turn, "My ID:", session?.user_id, "State:", gameState);
     if (gameState?.turn === session?.user_id && !gameState?.board[index] && !gameState?.winner && !gameState?.draw) {
       console.log("Move validation passed, sending to server...");
       nakamaManager.makeMove(index)
