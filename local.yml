@@ -1,0 +1,16 @@
+name: "nakama-node-1"
+data_dir: "./data/"
+
+logger:
+  level: "debug"
+  file: ""
+  stdout: true
+
+socket:
+  port: 7350
+  max_message_size_bytes: 4096
+
+console:
+  port: 7351
+  username: "admin"
+  password: "password"
