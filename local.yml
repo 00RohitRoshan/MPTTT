@@ -13,6 +13,13 @@ socket:
 session:
   allowed_origin: ["*"]
 
+matchmaker:
+  interval_sec: 1
+
+# "Direct Lobby" system:
+#   Client-Side: When clicking "Play", the client searches for any active match with a label like "open".
+#   Server-Side: If a match is found, the player joins immediately. If not, the player creates a new one.
+
 console:
   port: 7351
   username: "admin"

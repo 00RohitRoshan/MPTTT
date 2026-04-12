@@ -42,16 +42,19 @@ func (m *MatchHandler) MatchJoin(ctx context.Context, logger runtime.Logger, db 
 	s := state.(*MatchState)
 	for _, p := range presences {
 		s.Presences[p.GetUserId()] = p
-		if len(s.Marks) == 0 {
-			s.Marks[p.GetUserId()] = "X"
-			s.Turn = p.GetUserId()
-		} else if len(s.Marks) == 1 {
-			s.Marks[p.GetUserId()] = "O"
+		// Assign X to the first player, O to the second
+		if _, exists := s.Marks[p.GetUserId()]; !exists {
+			if len(s.Marks) == 0 {
+				s.Marks[p.GetUserId()] = "X"
+				s.Turn = p.GetUserId()
+			} else {
+				s.Marks[p.GetUserId()] = "O"
+			}
 		}
 	}
 
 	if len(s.Presences) == 2 {
-		// Game starts
+		logger.Info("All players joined. Starting game.")
 		m.broadcastState(dispatcher, s)
 	}
 
@@ -63,7 +66,6 @@ func (m *MatchHandler) MatchLeave(ctx context.Context, logger runtime.Logger, db
 	for _, p := range presences {
 		delete(s.Presences, p.GetUserId())
 	}
-	// If a player leaves, the other wins or match ends
 	return s
 }
 
@@ -71,10 +73,14 @@ func (m *MatchHandler) MatchLoop(ctx context.Context, logger runtime.Logger, db 
 	s := state.(*MatchState)
 
 	for _, msg := range messages {
+		logger.Debug("Received message OP: %v from %v", msg.GetOpCode(), msg.GetUserId())
+		
 		if msg.GetOpCode() == 1 { // MOVE
 			if msg.GetUserId() != s.Turn {
+				logger.Debug("Rejecting move: not user's turn. Turn: %v, User: %v", s.Turn, msg.GetUserId())
 				continue
 			}
+
 			var data struct {
 				Index int `json:"index"`
 			}
@@ -84,15 +90,19 @@ func (m *MatchHandler) MatchLoop(ctx context.Context, logger runtime.Logger, db 
 			}
 
 			if data.Index < 0 || data.Index > 8 || s.Board[data.Index] != "" {
+				logger.Debug("Rejecting move: invalid index or cell already taken. Index: %v", data.Index)
 				continue
 			}
 
 			s.Board[data.Index] = s.Marks[msg.GetUserId()]
-			
+			logger.Info("Player %v placed %v at %v", msg.GetUserId(), s.Marks[msg.GetUserId()], data.Index)
+
 			if m.checkWin(s) {
 				s.Winner = msg.GetUserId()
+				logger.Info("Match finished. Winner: %v", s.Winner)
 			} else if m.checkDraw(s) {
 				s.Draw = true
+				logger.Info("Match finished. Draw.")
 			} else {
 				// Switch turn
 				for uid := range s.Presences {
@@ -101,6 +111,7 @@ func (m *MatchHandler) MatchLoop(ctx context.Context, logger runtime.Logger, db 
 						break
 					}
 				}
+				logger.Debug("Turn switched to: %v", s.Turn)
 			}
 			m.broadcastState(dispatcher, s)
 		}
