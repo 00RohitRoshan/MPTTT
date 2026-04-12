@@ -65,6 +65,14 @@ class NakamaClient {
     console.log(`[Nakama] Sending move to match ${this.matchId}:`, data);
     await this.socket.sendMatchState(this.matchId, 1, data);
   }
+
+  async leaveMatch() {
+    if (this.matchId && this.socket) {
+      console.log("[Nakama] Leaving match:", this.matchId);
+      await this.socket.leaveMatch(this.matchId);
+      this.matchId = null;
+    }
+  }
 }
 
 export const nakamaManager = new NakamaClient();

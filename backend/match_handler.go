@@ -8,12 +8,13 @@ import (
 )
 
 type MatchState struct {
-	Board     []string                    `json:"board"`
-	Marks     map[string]string           `json:"marks"`
-	Presences map[string]runtime.Presence `json:"presences"`
-	Turn      string                      `json:"turn"`
-	Winner    string                      `json:"winner"`
-	Draw      bool                        `json:"draw"`
+	Board     []string          `json:"board"`
+	Marks     map[string]string `json:"marks"`
+	Presences map[string]runtime.Presence `json:"-"`
+	Turn      string            `json:"turn"`
+	Winner    string            `json:"winner"`
+	Draw      bool              `json:"draw"`
+	Started   bool              `json:"started"`
 }
 
 type MatchHandler struct{}
@@ -24,7 +25,7 @@ func (m *MatchHandler) MatchInit(ctx context.Context, logger runtime.Logger, db 
 		Marks:     make(map[string]string),
 		Presences: make(map[string]runtime.Presence),
 	}
-	tickRate := 1 // 1 tick per second is enough for TTT
+	tickRate := 10 // Increased for better responsiveness
 	label := "tictactoe-match"
 
 	return state, tickRate, label
@@ -54,7 +55,15 @@ func (m *MatchHandler) MatchJoin(ctx context.Context, logger runtime.Logger, db 
 	}
 
 	if len(s.Presences) == 2 {
-		logger.Info("All players joined. Starting game.")
+		s.Started = true
+		// Ensure Turn is set to one of the active players if it's currently empty
+		if s.Turn == "" {
+			for uid := range s.Presences {
+				s.Turn = uid
+				break
+			}
+		}
+		logger.Info("Game Started! First Turn: %v", s.Turn)
 		m.broadcastState(dispatcher, s)
 	}
 
@@ -65,7 +74,19 @@ func (m *MatchHandler) MatchLeave(ctx context.Context, logger runtime.Logger, db
 	s := state.(*MatchState)
 	for _, p := range presences {
 		delete(s.Presences, p.GetUserId())
+		logger.Info("MatchLeave: Player %v left. Remaining: %v", p.GetUserId(), len(s.Presences))
 	}
+
+	// Only award forfeit if the game was actually in progress
+	if s.Started && len(s.Presences) == 1 && s.Winner == "" && !s.Draw {
+		for uid := range s.Presences {
+			s.Winner = uid
+			logger.Info("Forfeit: Player %v wins because opponent left.", uid)
+			break
+		}
+		m.broadcastState(dispatcher, s)
+	}
+
 	return s
 }
 

@@ -47,6 +47,15 @@ function App() {
   const isMyTurn = gameState?.turn === session?.user_id
   const mySymbol = session ? gameState?.marks[session.user_id] : ""
 
+  console.log("[DEBUG] My ID:", session?.user_id, "| Server Turn:", gameState?.turn, "| Match:", isMyTurn);
+
+  const handleLeave = async () => {
+    await nakamaManager.leaveMatch()
+    setMatch(null)
+    setGameState(null)
+    setStatus('Ready to Play')
+  }
+
   return (
     <div className="container">
       <motion.div 
@@ -145,9 +154,18 @@ function App() {
 
             <div className="game-status">
               {!gameState?.winner && !gameState?.draw && (
-                <p className={`turn-indicator ${isMyTurn ? 'my-turn' : ''}`}>
-                  {isMyTurn ? "Your Turn" : "Opponent's Turn"}
-                </p>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', alignItems: 'center' }}>
+                  <p className={`turn-indicator ${isMyTurn ? 'my-turn' : ''}`}>
+                    {isMyTurn ? "Your Turn" : "Opponent's Turn"}
+                  </p>
+                  <button 
+                    className="button" 
+                    style={{ background: 'rgba(255, 255, 255, 0.05)', color: '#ff4d4d', fontSize: '0.8rem', width: 'auto' }}
+                    onClick={handleLeave}
+                  >
+                    Leave Match
+                  </button>
+                </div>
               )}
             </div>
           </div>
